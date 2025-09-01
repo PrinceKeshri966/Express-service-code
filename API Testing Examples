@@ -1,0 +1,212 @@
+# API Testing Examples
+
+Here are comprehensive examples to test your Products Service API:
+
+## Using Thunder Client (VS Code Extension)
+
+If you're using VS Code, Thunder Client is a great alternative to Postman:
+
+1. Install Thunder Client extension
+2. Create new request
+3. Use the examples below
+
+## Detailed cURL Examples
+
+### 1. Get All Products
+```bash
+# Basic request
+curl -X GET http://localhost:3000/products
+
+# With pretty printing (if you have jq installed)
+curl -X GET http://localhost:3000/products | jq
+```
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "products": [
+    {"id": 1, "name": "Laptop", "price": 50000},
+    {"id": 2, "name": "Mouse", "price": 1500},
+    {"id": 3, "name": "Keyboard", "price": 3000},
+    {"id": 4, "name": "Monitor", "price": 15000},
+    {"id": 5, "name": "Headphones", "price": 2500}
+  ],
+  "total": 5
+}
+```
+
+### 2. Add to Cart - Success Cases
+```bash
+# Add 2 laptops
+curl -X POST http://localhost:3000/cart \
+  -H "Content-Type: application/json" \
+  -d '{"productId": 1, "quantity": 2}'
+
+# Add 1 mouse
+curl -X POST http://localhost:3000/cart \
+  -H "Content-Type: application/json" \
+  -d '{"productId": 2, "quantity": 1}'
+
+# Add 5 headphones
+curl -X POST http://localhost:3000/cart \
+  -H "Content-Type: application/json" \
+  -d '{"productId": 5, "quantity": 5}'
+```
+
+### 3. Error Cases to Test
+```bash
+# Missing productId (should return 400)
+curl -X POST http://localhost:3000/cart \
+  -H "Content-Type: application/json" \
+  -d '{"quantity": 2}'
+
+# Missing quantity (should return 400)
+curl -X POST http://localhost:3000/cart \
+  -H "Content-Type: application/json" \
+  -d '{"productId": 1}'
+
+# Invalid quantity - zero (should return 400)
+curl -X POST http://localhost:3000/cart \
+  -H "Content-Type: application/json" \
+  -d '{"productId": 1, "quantity": 0}'
+
+# Invalid quantity - negative (should return 400)
+curl -X POST http://localhost:3000/cart \
+  -H "Content-Type: application/json" \
+  -d '{"productId": 1, "quantity": -1}'
+
+# Non-existent product (should return 404)
+curl -X POST http://localhost:3000/cart \
+  -H "Content-Type: application/json" \
+  -d '{"productId": 999, "quantity": 1}'
+```
+
+## Postman Collection JSON
+
+You can import this into Postman:
+
+```json
+{
+  "info": {
+    "name": "Products Service API",
+    "description": "API collection for testing products and cart endpoints"
+  },
+  "item": [
+    {
+      "name": "Get Products",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/products",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["products"]
+        }
+      }
+    },
+    {
+      "name": "Add to Cart - Success",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productId\": 1,\n  \"quantity\": 2\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/cart",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["cart"]
+        }
+      }
+    },
+    {
+      "name": "Add to Cart - Product Not Found",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productId\": 999,\n  \"quantity\": 1\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/cart",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["cart"]
+        }
+      }
+    }
+  ]
+}
+```
+
+## Quick Test Script
+
+Save this as `test.js` to run automated tests:
+
+```javascript
+// Simple test script
+const axios = require('axios');
+
+const BASE_URL = 'http://localhost:3000';
+
+async function testAPI() {
+  try {
+    console.log('Testing GET /products...');
+    const productsResponse = await axios.get(`${BASE_URL}/products`);
+    console.log('✅ Products endpoint working');
+    
+    console.log('Testing POST /cart...');
+    const cartResponse = await axios.post(`${BASE_URL}/cart`, {
+      productId: 1,
+      quantity: 2
+    });
+    console.log('✅ Cart endpoint working');
+    console.log('Total price:', cartResponse.data.totalPrice);
+    
+    console.log('All tests passed! 🎉');
+  } catch (error) {
+    console.error('❌ Test failed:', error.message);
+  }
+}
+
+testAPI();
+```
+
+## Browser Testing
+
+You can also test the GET endpoint directly in your browser:
+- Open: `http://localhost:3000/products`
+
+For POST requests, use the browser's developer console:
+```javascript
+fetch('http://localhost:3000/cart', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    productId: 1,
+    quantity: 2
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
